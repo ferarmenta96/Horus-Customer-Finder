@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Horus CF"/>
+  <meta name="theme-color" content="#0a0a0a"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icon-512.png"/>
+  <title>Horus Customer Finder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Barlow+Condensed:wght@300;400;500;600;700&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --gold:#C9A84C;--gold-light:#E2C472;--gold-dim:#8B6914;
+      --gold-glow:rgba(201,168,76,.18);--gold-pale:rgba(201,168,76,.08);
+      --gold-border:rgba(201,168,76,.22);
+      --ink:#080808;--ink-mid:#111111;--ink-card:#161616;
+      --ink-raised:#1e1e1e;--ink-border:#282828;--ink-subtle:#333333;
+      --parchment:#EDE8DC;--parchment-dim:rgba(237,232,220,.55);
+      --parchment-ghost:rgba(237,232,220,.18);
+      --red:#B34040;--green:#4A9B6F;
+      --safe-top:env(safe-area-inset-top,0px);
+      --safe-bot:env(safe-area-inset-bottom,0px);
+      --radius:14px;--radius-sm:9px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{-webkit-text-size-adjust:100%}
+    body{background:var(--ink);color:var(--parchment);font-family:"Barlow",sans-serif;font-weight:400;height:100dvh;overflow:hidden;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+
+    /* SPLASH */
+    #splash{position:fixed;inset:0;z-index:9999;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;transition:opacity .7s ease,transform .7s ease}
+    #splash.out{opacity:0;transform:scale(1.04);pointer-events:none}
+    .splash-emblem{position:relative;width:96px;height:96px;margin-bottom:28px}
+    .splash-emblem svg{width:100%;height:100%}
+    .sring{fill:none;stroke:var(--gold);transform-origin:48px 48px}
+    .sr1{animation:rot 9s linear infinite;stroke-width:1;opacity:.25}
+    .sr2{animation:rot 6s linear infinite reverse;stroke-width:.8;opacity:.45}
+    .sr3{animation:rot 4s linear infinite;stroke-width:1.2;opacity:.7}
+    .sdot{animation:pdot 2s ease-in-out infinite}
+    @keyframes rot{to{transform:rotate(360deg)}}
+    @keyframes pdot{0%,100%{opacity:1}50%{opacity:.35}}
+    .splash-brand{font-family:"Cormorant Garamond",serif;font-size:38px;font-weight:300;letter-spacing:10px;color:var(--gold);text-transform:uppercase}
+    .splash-sub{margin-top:6px;font-family:"Barlow Condensed",sans-serif;font-size:11px;font-weight:500;letter-spacing:5px;color:var(--parchment-dim);text-transform:uppercase}
+    .splash-line{width:40px;height:1px;background:var(--gold);opacity:.4;margin:20px auto 0;animation:wline 2s ease-in-out infinite}
+    @keyframes wline{0%,100%{width:40px;opacity:.4}50%{width:80px;opacity:.8}}
+
+    /* APP SHELL */
+    #app{position:relative;z-index:1;display:flex;flex-direction:column;height:100dvh;padding-top:max(var(--safe-top),14px);opacity:0;transition:opacity .5s ease}
+    #app.ready{opacity:1}
+
+    /* HEADER */
+    .hdr{flex-shrink:0;padding:12px 20px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--ink-border);background:linear-gradient(180deg,rgba(22,22,22,.95) 0%,rgba(10,10,10,.85) 100%);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+    .hdr-left{display:flex;align-items:center;gap:12px}
+    .hdr-mark{width:38px;height:38px;flex-shrink:0}
+    .hdr-mark svg{width:100%;height:100%}
+    .hdr-text h1{font-family:"Cormorant Garamond",serif;font-size:22px;font-weight:600;letter-spacing:3px;color:var(--gold);line-height:1}
+    .hdr-text p{font-family:"Barlow Condensed",sans-serif;font-size:10px;font-weight:500;letter-spacing:3px;color:var(--parchment-dim);text-transform:uppercase;margin-top:3px}
+    .conn-badge{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:100px;border:1px solid var(--ink-border);background:var(--ink-card)}
+    .conn-dot{width:6px;height:6px;border-radius:50%;background:var(--ink-subtle);transition:all .4s}
+    .conn-dot.on{background:var(--green);box-shadow:0 0 6px var(--green);animation:blink 2.5s ease-in-out infinite}
+    .conn-dot.off{background:var(--red);box-shadow:0 0 6px var(--red)}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+    .conn-label{font-family:"Barlow Condensed",sans-serif;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--parchment-dim)}
+
+    /* TABS */
+    .tabs{flex-shrink:0;display:flex;border-bottom:1px solid var(--ink-border);background:var(--ink-mid)}
+    .tab{flex:1;padding:13px 4px 12px;text-align:center;cursor:pointer;position:relative;transition:color .2s;-webkit-user-select:none;user-select:none}
+    .tab-icon{font-size:15px;display:block;line-height:1;margin-bottom:3px}
+    .tab-label{font-family:"Barlow Condensed",sans-serif;font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--parchment-dim);transition:color .2s}
+    .tab.active .tab-label{color:var(--gold)}
+    .tab::after{content:"";position:absolute;bottom:-1px;left:50%;transform:translateX(-50%) scaleX(0);width:60%;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);border-radius:2px;transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+    .tab.active::after{transform:translateX(-50%) scaleX(1)}
+
+    /* PANELS */
+    .panels{flex:1;overflow:hidden;position:relative}
+    .panel{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(max(var(--safe-bot),16px) + 52px);opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .25s ease,transform .25s ease}
+    .panel.active{opacity:1;transform:translateY(0);pointer-events:auto}
+    .pad{padding:18px 16px 0}
+
+    /* SECTION LABEL */
+    .slabel{display:flex;align-items:center;gap:10px;font-family:"Barlow Condensed",sans-serif;font-size:9px;font-weight:700;letter-spacing:3.5px;text-transform:uppercase;color:var(--gold);opacity:.8;margin-bottom:12px}
+    .slabel::before{content:"";flex:0 0 16px;height:1px;background:linear-gradient(90deg,transparent,var(--gold))}
+    .slabel::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--gold),transparent);opacity:.3}
+
+    /* CARD */
+    .card{background:var(--ink-card);border:1px solid var(--ink-border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden}
+    .card::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(135deg,rgba(201,168,76,.04) 0%,transparent 60%);border-radius:inherit}
+    .card+.card{margin-top:14px}
+
+    /* FORM */
+    .field{margin-top:16px}.field:first-child{margin-top:0}
+    .flabel{display:flex;align-items:center;gap:8px;font-family:"Barlow Condensed",sans-serif;font-size:10px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:var(--parchment-dim);margin-bottom:8px}
+    .flabel .req{color:var(--gold);font-size:12px;line-height:1}
+    input,select,textarea{width:100%;background:rgba(255,255,255,.035);border:1px solid var(--ink-subtle);color:var(--parchment);font-family:"Barlow",sans-serif;font-size:16px;font-weight:400;padding:13px 16px;border-radius:var(--radius-sm);outline:none;transition:border-color .2s,background .2s,box-shadow .2s;-webkit-appearance:none;appearance:none}
+    input::placeholder{color:var(--parchment-ghost);font-weight:300}
+    input:focus{border-color:var(--gold);background:rgba(201,168,76,.06);box-shadow:0 0 0 3px rgba(201,168,76,.08)}
+    select option{background:var(--ink-mid)}
+
+    /* REGION BLOCK */
+    .region-block{background:var(--ink-card);border:1px solid var(--gold-border);border-radius:var(--radius);padding:18px 20px;margin-top:14px;position:relative;overflow:hidden}
+    .region-block::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.6}
+    .region-block::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(135deg,rgba(201,168,76,.07) 0%,transparent 50%)}
+    .region-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+    .region-icon{width:32px;height:32px;border-radius:8px;background:var(--gold-pale);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+    .region-title{font-family:"Barlow Condensed",sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold)}
+    .region-desc{font-size:11px;color:var(--parchment-dim);margin-top:2px}
+    .region-presets{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+    .preset-chip{padding:5px 11px;border-radius:100px;border:1px solid var(--ink-subtle);background:rgba(255,255,255,.03);font-family:"Barlow Condensed",sans-serif;font-size:11px;font-weight:500;letter-spacing:1px;color:var(--parchment-dim);cursor:pointer;transition:all .2s;white-space:nowrap;-webkit-user-select:none;user-select:none}
+    .preset-chip:active,.preset-chip.sel{border-color:var(--gold);color:var(--gold);background:var(--gold-pale)}
+
+    /* BUTTONS */
+    .btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:17px 20px;border:none;border-radius:var(--radius);cursor:pointer;font-family:"Barlow Condensed",sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;transition:all .2s;-webkit-user-select:none;user-select:none;position:relative;overflow:hidden}
+    .btn::after{content:"";position:absolute;inset:0;background:rgba(255,255,255,0);transition:background .2s}
+    .btn:active::after{background:rgba(255,255,255,.06)}
+    .btn-primary{background:linear-gradient(135deg,#C9A84C 0%,#E2C472 50%,#C9A84C 100%);background-size:200% 100%;background-position:0% 0%;color:var(--ink);box-shadow:0 4px 24px rgba(201,168,76,.28),0 1px 0 rgba(255,255,255,.12) inset;transition:background-position .4s ease,box-shadow .2s,transform .15s}
+    .btn-primary:hover{background-position:100% 0%}
+    .btn-primary:active{transform:scale(.985);box-shadow:0 2px 12px rgba(201,168,76,.2)}
+    .btn-primary:disabled{background:var(--ink-subtle);color:var(--parchment-dim);box-shadow:none;cursor:not-allowed;transform:none}
+    .btn-ghost{background:transparent;border:1px solid var(--ink-subtle);color:var(--parchment-dim)}
+    .btn-ghost:active{border-color:var(--gold);color:var(--gold)}
+    .btn-danger{background:transparent;border:1px solid rgba(179,64,64,.35);color:#D46060}
+    .btn-danger:active{background:rgba(179,64,64,.08)}
+    .btn-sm{padding:10px 16px;font-size:10px;letter-spacing:2px;border-radius:var(--radius-sm)}
+    .btn-row{display:flex;gap:10px;margin-top:14px}
+    .btn-row .btn{flex:1}
+
+    /* LOADER */
+    .search-loader{display:none;text-align:center;padding:28px 0 8px}
+    .search-loader.on{display:block}
+    .loader-ring{width:48px;height:48px;margin:0 auto 14px;position:relative}
+    .loader-ring svg{width:100%;height:100%}
+    .loader-ring circle{fill:none;stroke:var(--gold);stroke-width:2.5;stroke-linecap:round;stroke-dasharray:120;stroke-dashoffset:120;animation:ldash 1.4s linear infinite;transform-origin:24px 24px}
+    @keyframes ldash{0%{stroke-dashoffset:120;transform:rotate(0deg)}50%{stroke-dashoffset:30}100%{stroke-dashoffset:120;transform:rotate(360deg)}}
+    .loader-text{font-family:"Barlow Condensed",sans-serif;font-size:11px;letter-spacing:3px;font-weight:500;color:var(--parchment-dim);text-transform:uppercase}
+    .loader-sub{font-size:12px;color:var(--gold);opacity:.7;margin-top:4px;font-weight:300}
+
+    /* LIST HEADER */
+    .list-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 10px;position:sticky;top:0;z-index:10;background:linear-gradient(180deg,var(--ink) 80%,transparent 100%);border-bottom:1px solid var(--ink-border)}
+    .list-count{font-family:"Barlow Condensed",sans-serif;font-size:11px;letter-spacing:2px;font-weight:600;text-transform:uppercase;color:var(--parchment-dim)}
+    .list-count em{color:var(--gold);font-style:normal;font-size:15px}
+    .btn-clear{font-family:"Barlow Condensed",sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#D46060;background:transparent;border:1px solid rgba(212,96,96,.25);border-radius:6px;padding:6px 12px;cursor:pointer}
+    .btn-clear:active{background:rgba(212,96,96,.08)}
+
+    /* PROSPECT CARDS */
+    .p-card{margin:0 14px 12px;background:var(--ink-card);border:1px solid var(--ink-border);border-radius:var(--radius);overflow:hidden;animation:cardIn .3s ease both}
+    .p-card:first-child{margin-top:14px}
+    @keyframes cardIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+    .p-card.removing{animation:cardOut .28s ease forwards}
+    @keyframes cardOut{to{opacity:0;transform:translateX(-100%) scale(.95);max-height:0;margin:0;padding:0}}
+    .p-card-top{padding:16px 16px 12px;border-bottom:1px solid var(--ink-border);display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+    .p-company{font-family:"Cormorant Garamond",serif;font-size:18px;font-weight:600;line-height:1.2;color:var(--parchment);flex:1}
+    .p-niche{flex-shrink:0;font-family:"Barlow Condensed",sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);background:var(--gold-pale);border:1px solid var(--gold-border);padding:4px 9px;border-radius:4px}
+    .p-rating{display:inline-flex;align-items:center;gap:4px;font-family:"Barlow Condensed",sans-serif;font-size:12px;color:var(--gold);margin-top:6px}
+    .p-region{font-family:"Barlow Condensed",sans-serif;font-size:11px;color:var(--parchment-dim);margin-top:4px;display:flex;align-items:center;gap:5px}
+    .p-card-contacts{padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+    .contact-row{display:flex;align-items:center;gap:10px}
+    .contact-btn{width:32px;height:32px;flex-shrink:0;border-radius:8px;border:1px solid var(--ink-border);background:var(--ink-raised);display:flex;align-items:center;justify-content:center;font-size:14px;text-decoration:none;transition:all .15s;cursor:pointer}
+    .contact-btn:active{border-color:var(--gold);background:var(--gold-pale)}
+    .contact-val{font-size:14px;font-weight:400;color:var(--parchment-dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .contact-val.nil{color:rgba(237,232,220,.2);font-style:italic;font-size:12px}
+    .p-card-foot{padding:10px 16px 14px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--ink-border)}
+    .p-date{font-family:"Barlow Condensed",sans-serif;font-size:10px;letter-spacing:1.5px;color:rgba(237,232,220,.25);text-transform:uppercase}
+    .p-del{font-family:"Barlow Condensed",sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(212,96,96,.6);background:transparent;border:1px solid rgba(212,96,96,.18);border-radius:6px;padding:6px 12px;cursor:pointer;transition:all .2s}
+    .p-del:active{color:#D46060;border-color:rgba(212,96,96,.5);background:rgba(212,96,96,.06)}
+
+    /* EMPTY STATE */
+    .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:340px;padding:40px 30px;text-align:center}
+    .empty-symbol{width:64px;height:64px;margin-bottom:20px;opacity:.2}
+    .empty-symbol svg{width:100%;height:100%}
+    .empty-h{font-family:"Cormorant Garamond",serif;font-size:22px;font-weight:300;color:var(--parchment-dim);margin-bottom:8px}
+    .empty-p{font-size:13px;line-height:1.6;color:rgba(237,232,220,.3)}
+
+    /* STRATEGY */
+    .strategy-out{display:none;margin-top:14px;background:var(--ink-card);border:1px solid var(--ink-border);border-radius:var(--radius);overflow:hidden;animation:cardIn .35s ease both}
+    .strategy-out.on{display:block}
+    .strategy-out-hdr{padding:16px 20px 14px;border-bottom:1px solid var(--ink-border);background:linear-gradient(135deg,rgba(201,168,76,.08),transparent);display:flex;align-items:center;gap:10px}
+    .strategy-out-hdr h3{font-family:"Cormorant Garamond",serif;font-size:20px;font-weight:600;color:var(--gold)}
+    .strategy-body{padding:18px 20px;font-size:15px;line-height:1.75;color:var(--parchment-dim);white-space:pre-wrap}
+
+    /* FOOTER */
+    .pwr-footer{position:fixed;bottom:0;left:0;right:0;z-index:100;padding-bottom:max(var(--safe-bot),10px);background:linear-gradient(0deg,var(--ink) 60%,transparent 100%);pointer-events:none}
+    .pwr-inner{display:flex;align-items:center;justify-content:center;gap:7px;padding:8px 0}
+    .pwr-line{flex:1;max-width:60px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.3))}
+    .pwr-line.r{background:linear-gradient(90deg,rgba(201,168,76,.3),transparent)}
+    .pwr-text{font-family:"Barlow Condensed",sans-serif;font-size:9px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:rgba(201,168,76,.4)}
+    .pwr-text span{color:rgba(201,168,76,.7)}
+
+    /* TOAST */
+    #toast{position:fixed;bottom:max(calc(var(--safe-bot) + 60px),72px);left:50%;transform:translateX(-50%) translateY(10px);z-index:9000;pointer-events:none;background:var(--ink-raised);border:1px solid var(--ink-subtle);border-radius:100px;padding:11px 22px;font-family:"Barlow Condensed",sans-serif;font-size:12px;font-weight:600;letter-spacing:1.5px;color:var(--parchment);white-space:nowrap;opacity:0;transition:all .28s cubic-bezier(.34,1.56,.64,1)}
+    #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    #toast.ok{border-color:var(--gold);color:var(--gold)}
+    #toast.err{border-color:var(--red);color:#D46060}
+
+    /* MODAL */
+    .overlay{position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,.78);display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .25s}
+    .overlay.on{opacity:1;pointer-events:auto}
+    .bottom-sheet{width:100%;background:var(--ink-card);border-top:1px solid var(--ink-border);border-radius:22px 22px 0 0;padding:18px 22px max(calc(var(--safe-bot) + 18px),28px);transform:translateY(100%);transition:transform .3s cubic-bezier(.34,1.2,.64,1)}
+    .overlay.on .bottom-sheet{transform:translateY(0)}
+    .sheet-pill{width:36px;height:4px;border-radius:2px;background:var(--ink-subtle);margin:0 auto 20px}
+    .sheet-title{font-family:"Cormorant Garamond",serif;font-size:22px;font-weight:600;color:var(--parchment);margin-bottom:8px}
+    .sheet-sub{font-size:14px;line-height:1.55;color:var(--parchment-dim);margin-bottom:24px}
+    .sheet-actions{display:flex;flex-direction:column;gap:10px}
+    ::-webkit-scrollbar{width:0}
+  </style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="splash-emblem">
+    <svg viewBox="0 0 96 96">
+      <circle class="sring sr1" cx="48" cy="48" r="44"/>
+      <circle class="sring sr2" cx="48" cy="48" r="35"/>
+      <circle class="sring sr3" cx="48" cy="48" r="26"/>
+      <circle class="sdot" cx="48" cy="48" r="8" fill="#C9A84C"/>
+    </svg>
+  </div>
+  <div class="splash-brand">HORUS</div>
+  <div class="splash-sub">Customer Finder</div>
+  <div class="splash-line"></div>
+</div>
+
+<div id="app">
+  <header class="hdr">
+    <div class="hdr-left">
+      <div class="hdr-mark">
+        <svg viewBox="0 0 38 38">
+          <circle cx="19" cy="19" r="17" fill="none" stroke="#C9A84C" stroke-width=".8" opacity=".25"/>
+          <circle cx="19" cy="19" r="13" fill="none" stroke="#C9A84C" stroke-width=".8" opacity=".45"/>
+          <circle cx="19" cy="19" r="9"  fill="none" stroke="#C9A84C" stroke-width="1"  opacity=".7"/>
+          <circle cx="19" cy="19" r="4"  fill="#C9A84C"/>
+        </svg>
+      </div>
+      <div class="hdr-text">
+        <h1>HORUS</h1>
+        <p>Customer Finder</p>
+      </div>
+    </div>
+    <div class="conn-badge">
+      <div class="conn-dot" id="connDot"></div>
+      <span class="conn-label" id="connLabel">—</span>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="search">
+      <span class="tab-icon">⟳</span>
+      <span class="tab-label">Búsqueda</span>
+    </div>
+    <div class="tab" data-tab="prospects">
+      <span class="tab-icon">◈</span>
+      <span class="tab-label">Prospectos</span>
+    </div>
+    <div class="tab" data-tab="strategy">
+      <span class="tab-icon">⚡</span>
+      <span class="tab-label">Estrategia</span>
+    </div>
+  </div>
+
+  <div class="panels">
+
+    <!-- SEARCH PANEL -->
+    <div class="panel active" id="panel-search">
+      <div class="pad">
+        <!-- REGION — Featured block -->
+        <div class="region-block">
+          <div class="region-header">
+            <div class="region-icon">📍</div>
+            <div>
+              <div class="region-title">Región de Búsqueda</div>
+              <div class="region-desc">Selecciona una ciudad o escribe la tuya</div>
+            </div>
+          </div>
+          <div class="region-presets" id="regionPresets">
+            <div class="preset-chip sel" data-val="McAllen, TX">McAllen TX</div>
+            <div class="preset-chip" data-val="Houston, TX">Houston TX</div>
+            <div class="preset-chip" data-val="San Antonio, TX">San Antonio TX</div>
+            <div class="preset-chip" data-val="Dallas, TX">Dallas TX</div>
+            <div class="preset-chip" data-val="Austin, TX">Austin TX</div>
+            <div class="preset-chip" data-val="Miami, FL">Miami FL</div>
+            <div class="preset-chip" data-val="Los Angeles, CA">Los Angeles</div>
+            <div class="preset-chip" data-val="Chicago, IL">Chicago IL</div>
+            <div class="preset-chip" data-val="Phoenix, AZ">Phoenix AZ</div>
+            <div class="preset-chip" data-val="New York, NY">New York</div>
+          </div>
+          <input type="text" id="regionInput" value="McAllen, TX"
+            placeholder="Ciudad, Estado — ej: El Paso, TX"
+            autocomplete="off" autocorrect="off" spellcheck="false"
+            oninput="onRegionType()"/>
+        </div>
+
+        <div style="margin-top:14px">
+          <div class="slabel">Parámetros</div>
+          <div class="card">
+            <div class="field" style="margin-top:0">
+              <div class="flabel">Nicho a prospectar <span class="req">✦</span></div>
+              <input type="text" id="targetNiche" placeholder="ej: restaurantes, seguros, abogados…" autocomplete="off" autocorrect="off" spellcheck="false"/>
+            </div>
+            <div class="field">
+              <div class="flabel">Tu servicio / lo que ofreces</div>
+              <input type="text" id="myNiche" placeholder="ej: software de gestión, seguros de vida…" autocomplete="off" autocorrect="off" spellcheck="false"/>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;margin-bottom:4px">
+          <button class="btn btn-primary" id="btnSearch" onclick="doSearch()">
+            <span id="btnSearchTxt">Iniciar Búsqueda</span>
+          </button>
+        </div>
+
+        <div class="search-loader" id="loader">
+          <div class="loader-ring"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="20"/></svg></div>
+          <div class="loader-text">Buscando en Google Maps</div>
+          <div class="loader-sub" id="loaderSub">Conectando…</div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-ghost btn-sm" onclick="loadProspects()">↻ Actualizar lista</button>
+        </div>
+        <div style="height:20px"></div>
+      </div>
+    </div>
+
+    <!-- PROSPECTS PANEL -->
+    <div class="panel" id="panel-prospects">
+      <div class="list-header">
+        <div class="list-count"><em id="pCount">0</em> prospectos</div>
+        <button class="btn-clear" onclick="confirmClear()">Limpiar todo</button>
+      </div>
+      <div id="pList"></div>
+    </div>
+
+    <!-- STRATEGY PANEL -->
+    <div class="panel" id="panel-strategy">
+      <div class="pad">
+        <div class="slabel">Estrategia con IA</div>
+        <div class="card">
+          <div class="field" style="margin-top:0">
+            <div class="flabel">Nicho al que quieres vender <span class="req">✦</span></div>
+            <input type="text" id="sNiche" placeholder="ej: restaurantes, clínicas médicas…" autocomplete="off"/>
+          </div>
+          <div class="field">
+            <div class="flabel">Tu servicio / lo que ofreces <span class="req">✦</span></div>
+            <input type="text" id="sMyNiche" placeholder="ej: seguros de vida, software CRM…" autocomplete="off"/>
+          </div>
+        </div>
+        <div style="margin-top:14px">
+          <button class="btn btn-primary" id="btnStrat" onclick="doStrategy()">
+            <span id="btnStratTxt">Generar Estrategia</span>
+          </button>
+        </div>
+        <div class="search-loader" id="stratLoader">
+          <div class="loader-ring"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="20"/></svg></div>
+          <div class="loader-text">Analizando con IA</div>
+          <div class="loader-sub">GPT-4 generando estrategia…</div>
+        </div>
+        <div class="strategy-out" id="stratOut">
+          <div class="strategy-out-hdr">
+            <span style="font-size:18px">⚡</span>
+            <h3>Estrategia Generada</h3>
+          </div>
+          <div class="strategy-body" id="stratText"></div>
+        </div>
+        <div style="height:20px"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="pwr-footer">
+  <div class="pwr-inner">
+    <div class="pwr-line"></div>
+    <span class="pwr-text">Powered by <span>HORUS</span></span>
+    <div class="pwr-line r"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<div class="overlay" id="overlay">
+  <div class="bottom-sheet">
+    <div class="sheet-pill"></div>
+    <div class="sheet-title" id="sheetTitle">¿Estás seguro?</div>
+    <div class="sheet-sub"   id="sheetSub">Esta acción no puede deshacerse.</div>
+    <div class="sheet-actions">
+      <button class="btn btn-danger" id="sheetOk">Confirmar</button>
+      <button class="btn btn-ghost"  onclick="closeSheet()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── CONFIGURACIÓN PRIVADA ───────────────────────
+// Pega aquí la URL de tu Google Apps Script deployment.
+// Este archivo NO debe compartirse públicamente.
+const SCRIPT_URL = "TU_URL_AQUI";
+// ─────────────────────────────────────────────────
+
+const S={url:SCRIPT_URL,prospects:[],sheetCb:null};
+
+window.addEventListener("load",()=>{
+  setTimeout(()=>{
+    document.getElementById("splash").classList.add("out");
+    setTimeout(()=>{
+      document.getElementById("splash").style.display="none";
+      const a=document.getElementById("app");
+      a.style.display="flex";
+      requestAnimationFrame(()=>a.classList.add("ready"));
+    },700);
+  },2200);
+  ping();
+  document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>switchTab(t.dataset.tab)));
+  document.querySelectorAll(".preset-chip").forEach(c=>{
+    c.addEventListener("click",()=>{
+      document.querySelectorAll(".preset-chip").forEach(x=>x.classList.remove("sel"));
+      c.classList.add("sel");
+      document.getElementById("regionInput").value=c.dataset.val;
+    });
+  });
+  loadProspects();
+});
+
+function switchTab(id){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.tab===id));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active",p.id==="panel-"+id));
+  if(id==="prospects")loadProspects();
+}
+function onRegionType(){document.querySelectorAll(".preset-chip").forEach(c=>c.classList.remove("sel"));}
+async function ping(){
+  try{const r=await call({action:"ping"});setConn(r.ok);}catch(e){setConn(false);}
+}
+function setConn(s){
+  const d=document.getElementById("connDot"),l=document.getElementById("connLabel");
+  if(s===null){d.className="conn-dot";l.textContent="—";}
+  else if(s){d.className="conn-dot on";l.textContent="Online";}
+  else{d.className="conn-dot off";l.textContent="Error";}
+}
+async function call(params){
+  if(!S.url)throw new Error("URL no configurada");
+  const u=new URL(S.url);
+  Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,String(v)));
+  const r=await fetch(u.toString(),{redirect:"follow"});
+  const txt=await r.text();
+  try{return JSON.parse(txt);}catch(e){throw new Error("Respuesta inválida");}
+}
+async function doSearch(){
+  const niche=document.getElementById("targetNiche").value.trim();
+  const myNiche=document.getElementById("myNiche").value.trim();
+  const region=document.getElementById("regionInput").value.trim()||"McAllen, TX";
+  if(!niche){toast("Ingresa el nicho a buscar","err");return;}
+  const btn=document.getElementById("btnSearch");
+  btn.disabled=true;document.getElementById("btnSearchTxt").textContent="Buscando…";
+  const ld=document.getElementById("loader");ld.classList.add("on");
+  document.getElementById("loaderSub").textContent=niche+" en "+region;
+  try{
+    const r=await call({action:"search",niche,myNiche,location:region});
+    if(r.ok){toast("✓ "+r.count+" prospectos encontrados","ok");switchTab("prospects");}
+    else toast(r.error||"Error","err");
+  }catch(e){toast("Error: "+e.message,"err");}
+  finally{btn.disabled=false;document.getElementById("btnSearchTxt").textContent="Iniciar Búsqueda";ld.classList.remove("on");}
+}
+async function loadProspects(){
+  if(!S.url)return;
+  try{const r=await call({action:"list"});if(r.ok){S.prospects=r.prospects||[];renderProspects();}}catch(e){}
+}
+function renderProspects(){
+  const list=document.getElementById("pList");
+  document.getElementById("pCount").textContent=S.prospects.length;
+  if(!S.prospects.length){
+    list.innerHTML=`<div class="empty"><div class="empty-symbol"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="none" stroke="#C9A84C" stroke-width="1.5" opacity=".4"/><circle cx="32" cy="32" r="20" fill="none" stroke="#C9A84C" stroke-width="1" opacity=".3"/><circle cx="32" cy="32" r="6" fill="#C9A84C" opacity=".5"/></svg></div><div class="empty-h">Sin prospectos aún</div><div class="empty-p">Usa Búsqueda para encontrar<br>clientes en tu región</div></div>`;
+    return;
+  }
+  list.innerHTML=S.prospects.map((p,i)=>{
+    const date=p.date?fmtDate(p.date):"";
+    return `<div class="p-card" id="pc-${i}">
+      <div class="p-card-top">
+        <div>
+          <div class="p-company">${x(p.company)}</div>
+          ${p.rating?`<div class="p-rating">★ ${x(p.rating)}</div>`:""}
+          ${p.address?`<div class="p-region">📍 <span>${x(shortAddr(p.address))}</span></div>`:""}
+        </div>
+        <div class="p-niche">${x(p.niche||"—")}</div>
+      </div>
+      <div class="p-card-contacts">
+        ${cRow("📞",p.phone,p.phone?"tel:"+p.phone.replace(/\s/g,""):null)}
+        ${cRow("✉️",p.email,p.email?"mailto:"+p.email:null)}
+        ${cRow("🌐",p.website?sUrl(p.website):"",p.website||null)}
+      </div>
+      <div class="p-card-foot">
+        <span class="p-date">${date}</span>
+        <button class="p-del" onclick="confirmDel(${i},'${x(p.company)}')">Eliminar</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+function cRow(icon,val,href){
+  const has=val&&val.trim();
+  const btn=href?`<a class="contact-btn" href="${x(href)}">${icon}</a>`:`<span class="contact-btn">${icon}</span>`;
+  return `<div class="contact-row">${btn}<span class="contact-val ${has?"":"nil"}">${has?x(val):"No disponible"}</span></div>`;
+}
+function shortAddr(a){return a.split(",").slice(0,2).join(",").trim();}
+function sUrl(u){try{return new URL(u).hostname.replace(/^www\./,"");}catch(e){return u;}}
+function fmtDate(d){try{return new Date(d).toLocaleDateString("es-MX",{month:"short",day:"numeric",year:"numeric"});}catch(e){return "";}}
+function confirmDel(i,name){
+  openSheet("¿Eliminar prospecto?",'"'+name+'" será removido de tu Google Sheet.',async()=>{
+    const p=S.prospects[i];const el=document.getElementById("pc-"+i);
+    el.classList.add("removing");
+    await new Promise(r=>setTimeout(r,280));
+    try{
+      const res=await call({action:"delete",row:p.row});
+      if(res.ok){S.prospects.splice(i,1);renderProspects();toast("Prospecto eliminado","ok");}
+      else{el.classList.remove("removing");toast(res.error||"Error","err");}
+    }catch(e){el.classList.remove("removing");toast("Error: "+e.message,"err");}
+  });
+}
+function confirmClear(){
+  if(!S.prospects.length){toast("La lista ya está vacía","err");return;}
+  openSheet("¿Limpiar toda la lista?","Se eliminarán los "+S.prospects.length+" prospectos. No se puede deshacer.",async()=>{
+    try{const r=await call({action:"clear"});if(r.ok){S.prospects=[];renderProspects();toast("Lista limpiada ✓","ok");}else toast(r.error||"Error","err");}
+    catch(e){toast("Error: "+e.message,"err");}
+  });
+}
+async function doStrategy(){
+  const niche=document.getElementById("sNiche").value.trim();
+  const myNiche=document.getElementById("sMyNiche").value.trim();
+  if(!niche||!myNiche){toast("Completa ambos campos","err");return;}
+  const btn=document.getElementById("btnStrat");
+  btn.disabled=true;document.getElementById("btnStratTxt").textContent="Analizando…";
+  document.getElementById("stratLoader").classList.add("on");
+  document.getElementById("stratOut").classList.remove("on");
+  try{
+    const r=await call({action:"strategy",niche,myNiche});
+    if(r.ok){document.getElementById("stratText").textContent=r.strategy;document.getElementById("stratOut").classList.add("on");}
+    else toast(r.error||"Error","err");
+  }catch(e){toast("Error: "+e.message,"err");}
+  finally{btn.disabled=false;document.getElementById("btnStratTxt").textContent="Generar Estrategia";document.getElementById("stratLoader").classList.remove("on");}
+}
+function openSheet(title,sub,cb){
+  document.getElementById("sheetTitle").textContent=title;
+  document.getElementById("sheetSub").textContent=sub;
+  S.sheetCb=cb;document.getElementById("overlay").classList.add("on");
+}
+function closeSheet(){document.getElementById("overlay").classList.remove("on");S.sheetCb=null;}
+document.getElementById("sheetOk").addEventListener("click",()=>{const cb=S.sheetCb;closeSheet();if(cb)cb();});
+document.getElementById("overlay").addEventListener("click",e=>{if(e.target===document.getElementById("overlay"))closeSheet();});
+let _tt=null;
+function toast(msg,type=""){
+  const el=document.getElementById("toast");el.textContent=msg;el.className="show "+type;
+  if(_tt)clearTimeout(_tt);_tt=setTimeout(()=>{el.className="";},3000);
+}
+function x(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));}</script>
+</body>
+</html>
