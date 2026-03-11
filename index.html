@@ -399,7 +399,7 @@
 // ─── CONFIGURACIÓN PRIVADA ───────────────────────
 // Pega aquí la URL de tu Google Apps Script deployment.
 // Este archivo NO debe compartirse públicamente.
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyvHbuxst3D4pGKV_EZVYeTJ3mAhfG8bsGfkKyWHEUOMHcj7lL0woh1Zv9SRdfSG9jivg/exec";
+const SCRIPT_URL = "TU_URL_AQUI";
 // ─────────────────────────────────────────────────
 
 const S={url:SCRIPT_URL,prospects:[],sheetCb:null};
@@ -441,13 +441,29 @@ function setConn(s){
   else if(s){d.className="conn-dot on";l.textContent="Online";}
   else{d.className="conn-dot off";l.textContent="Error";}
 }
-async function call(params){
-  if(!S.url)throw new Error("URL no configurada");
-  const u=new URL(S.url);
-  Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,String(v)));
-  const r=await fetch(u.toString(),{redirect:"follow"});
-  const txt=await r.text();
-  try{return JSON.parse(txt);}catch(e){throw new Error("Respuesta inválida");}
+function call(params){
+  // Google Apps Script bloquea fetch() por CORS desde dominios externos.
+  // JSONP es la única forma confiable de comunicarse con GAS desde una PWA.
+  return new Promise((resolve, reject)=>{
+    if(!S.url){reject(new Error("URL no configurada"));return;}
+    const cbName="hcb_"+Date.now()+"_"+Math.floor(Math.random()*9999);
+    const u=new URL(S.url);
+    Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,String(v)));
+    u.searchParams.set("callback", cbName);
+    const script=document.createElement("script");
+    const timer=setTimeout(()=>{
+      cleanup();reject(new Error("Timeout — verifica la URL del script"));
+    }, 30000);
+    window[cbName]=(data)=>{cleanup();resolve(data);};
+    function cleanup(){
+      clearTimeout(timer);
+      delete window[cbName];
+      if(script.parentNode)script.parentNode.removeChild(script);
+    }
+    script.onerror=()=>{cleanup();reject(new Error("No se pudo conectar al script"));};
+    script.src=u.toString();
+    document.head.appendChild(script);
+  });
 }
 async function doSearch(){
   const niche=document.getElementById("targetNiche").value.trim();
