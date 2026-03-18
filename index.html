@@ -399,7 +399,7 @@
 // ─── CONFIGURACIÓN PRIVADA ───────────────────────
 // Pega aquí la URL de tu Google Apps Script deployment.
 // Este archivo NO debe compartirse públicamente.
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzhx73PF9kId2C4yZNCvYNC6bTf7Pc2CYlRbj3biuWo03371KoSt0lu5D7Jp0JBow42Qg/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzTiRjK-Mnx5Bhc1Coq4MoC15VE5QBOu2is3Y6i4y8r6NRKrdFbdbInUAz-vpaSHQaDCg/exec";  // ← Solo cambia esto
 // ─────────────────────────────────────────────────
 
 const S={url:SCRIPT_URL,prospects:[],sheetCb:null};
@@ -453,7 +453,7 @@ function call(params){
     const script=document.createElement("script");
     const timer=setTimeout(()=>{
       cleanup();reject(new Error("Timeout — verifica la URL del script"));
-    }, 30000);
+    }, 120000);
     window[cbName]=(data)=>{cleanup();resolve(data);};
     function cleanup(){
       clearTimeout(timer);
